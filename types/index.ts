@@ -3,7 +3,7 @@ export interface User {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
-  purchasedCourses: string[]; // IDs dos cursos comprados
+  purchasedCourses: string[];
 }
 
 export interface Course {
@@ -16,6 +16,6 @@ export interface Course {
 }
 
 export interface PurchasedCourse extends Course {
-  progress: number; // 0-100
-  lastWatched: number; // timestamp
+  progress: number;
+  lastWatched: number;
 }

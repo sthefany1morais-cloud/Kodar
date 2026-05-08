@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollView, View, Alert } from "react-native";
 import { router } from "expo-router";
 import styled from "styled-components/native";
@@ -53,19 +53,19 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  const { user, login } = useAuth();
 
-  const { login, user, loading: authLoading } = useAuth();
-
-  console.log(
-    "LoginScreen - authLoading:",
-    authLoading,
-    "user:",
-    user?.email,
-  );
+  useEffect(() => {
+    if (user) {
+      console.log("Já logado, redirecionando...");
+      router.replace("/(tabs)");
+    }
+  }, [user]);
 
   const handleLogin = async () => {
-    console.log("Tentando login com:", email);
-
+    console.log("Login com:", email);
+    
     if (!email || !password) {
       setError("Preencha todos os campos");
       return;
@@ -75,13 +75,10 @@ export default function LoginScreen() {
     setError("");
 
     try {
-      console.log("Chamando login do AuthContext...");
       await login(email, password);
-      console.log("Login bem-sucedido! Redirecionando...");
-
-      router.push("/(auth)/home");
+      console.log("Login OK - redirecionando...");
     } catch (err: any) {
-      console.error("Erro no login:", err);
+      console.error("Login error:", err);
       setError(err.message || "Erro ao fazer login");
       Alert.alert("Erro", err.message || "Erro ao fazer login");
     } finally {
@@ -89,8 +86,7 @@ export default function LoginScreen() {
     }
   };
 
-  if (authLoading) {
-    console.log("LoginScreen mostrando loading do AuthContext");
+  if (loading) {
     return (
       <LoadingContainer>
         <Loading />
@@ -126,7 +122,7 @@ export default function LoginScreen() {
           variant="primary"
           size="lg"
           onPress={handleLogin}
-          disabled={loading || authLoading || !email || !password}
+          disabled={loading || !email || !password}
           style={{ marginTop: 16 }}
         >
           Entrar
@@ -137,7 +133,7 @@ export default function LoginScreen() {
             variant="outline"
             size="lg"
             onPress={() => router.push("/register")}
-            disabled={loading || authLoading}
+            disabled={loading}
           >
             Criar conta
           </Button>

@@ -1,17 +1,21 @@
 import React from "react";
-import { TouchableOpacityProps } from "react-native";
+import { TouchableOpacityProps, Alert, Linking } from "react-native";
 import styled from "styled-components/native";
-import { Course } from "../../types";
 import { Button } from "../atoms/Button";
 import { useAuth } from "../../context/AuthContext";
 import { COURSES } from "../../constants/courses";
-import { router } from "expo-router";
-import { Linking } from "react-native";
+
+interface Course {
+  id: string;
+  title: string;
+  thumbnail: string;
+  youtubeUrl: string;
+  price: number;
+  duration?: string;
+}
 
 interface CourseCardProps extends TouchableOpacityProps {
   course: Course;
-  isPurchased?: boolean;
-  onWatch?: () => void;
 }
 
 const Card = styled.TouchableOpacity`
@@ -20,10 +24,6 @@ const Card = styled.TouchableOpacity`
   border-radius: 16px;
   padding: 20px;
   elevation: 2;
-  shadow-color: #000;
-  shadow-offset: 0px 2px;
-  shadow-opacity: 0.1;
-  shadow-radius: 4px;
 `;
 
 const CourseThumbnail = styled.Image`
@@ -53,32 +53,28 @@ const PriceTag = styled.Text`
   margin-bottom: 16px;
 `;
 
-export const CourseCard: React.FC<CourseCardProps> = ({
-  course,
-  isPurchased = false,
-  onWatch,
-  ...props
-}) => {
-  const { user, purchaseCourse } = useAuth();
+export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
+  const { purchaseCourse, purchasedCourses } = useAuth();
+  const isPurchased = purchasedCourses.includes(course.id);
 
   const handlePurchase = async () => {
     try {
       await purchaseCourse(course.id);
+      Alert.alert("Sucesso!", "Curso comprado! Vá em 'Meus Cursos'");
     } catch (error: any) {
-      alert("Erro ao comprar curso: " + error.message);
+      Alert.alert("Erro", "Erro ao comprar: " + error.message);
     }
   };
 
   const handleWatch = () => {
-    if (onWatch) {
-      onWatch();
-    } else {
-      Linking.openURL(course.youtubeUrl);
-    }
+    Alert.alert("YouTube", `Abrir "${course.title}"?`, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Abrir", onPress: () => Linking.openURL(course.youtubeUrl) },
+    ]);
   };
 
   return (
-    <Card {...props}>
+    <Card>
       <CourseThumbnail source={{ uri: course.thumbnail }} />
       <CourseTitle>{course.title}</CourseTitle>
       <CourseDuration>{course.duration}</CourseDuration>
@@ -90,7 +86,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
           onPress={handleWatch}
           style={{ width: "100%" }}
         >
-          Assistir Agora
+          🎥 Assistir Agora
         </Button>
       ) : (
         <>

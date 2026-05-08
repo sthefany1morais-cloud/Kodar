@@ -1,22 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { FlatList, ListRenderItemInfo, View, Text } from "react-native";
-import { Linking } from "react-native";
 import styled from "styled-components/native";
 import { COURSES } from "../../constants/courses";
 import { CourseCard } from "../../components/molecules/CourseCard";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
+import { useCourses } from "../../context/CoursesContext";
 import { UserHeader } from "../../components/organisms/UserHeader";
-import { Course } from "../../types";
 
 const Container = styled(SafeAreaView)`
-  // CORREÇÃO: Adicione os parênteses
   flex: 1;
   background-color: #fafafa;
-`;
-
-const ListContainer = styled.View`
-  flex: 1;
 `;
 
 const EmptyState = styled.View`
@@ -34,24 +28,20 @@ const EmptyText = styled.Text`
 `;
 
 export default function MyCoursesScreen() {
-  const { user, logout, purchasedCourses = [] } = useAuth();
-  const [myCourses, setMyCourses] = useState<Course[]>([]);
+  const { user, logout } = useAuth();
+  const { purchasedCourses } = useCourses();
 
-  useEffect(() => {
-    const filteredCourses = COURSES.filter((course) =>
-      purchasedCourses.includes(course.id),
-    );
-    setMyCourses(filteredCourses);
-  }, [purchasedCourses]);
+  const myCourses = useMemo(
+    () => COURSES.filter((course) => purchasedCourses.includes(course.id)),
+    [purchasedCourses],
+  );
 
-  const renderCourseItem = ({ item }: ListRenderItemInfo<Course>) => (
-    <CourseCard
-      course={item}
-      isPurchased={true}
-      onWatch={() => {
-        Linking.openURL(item.youtubeUrl);
-      }}
-    />
+  console.log("🎓 Meus Cursos:", myCourses.length);
+
+  const renderCourseItem = ({
+    item,
+  }: ListRenderItemInfo<(typeof COURSES)[number]>) => (
+    <CourseCard course={item} />
   );
 
   if (myCourses.length === 0) {
@@ -59,8 +49,8 @@ export default function MyCoursesScreen() {
       <Container>
         <UserHeader user={user} onLogout={logout} />
         <EmptyState>
-          <EmptyText>Você ainda não comprou nenhum curso.</EmptyText>
-          <EmptyText>Confira nossa lista de cursos disponíveis!</EmptyText>
+          <EmptyText>Você ainda não comprou nenhum curso</EmptyText>
+          <EmptyText>Vá em "Cursos" e compre o primeiro!</EmptyText>
         </EmptyState>
       </Container>
     );
@@ -69,15 +59,12 @@ export default function MyCoursesScreen() {
   return (
     <Container>
       <UserHeader user={user} onLogout={logout} />
-      <ListContainer>
-        <FlatList
-          data={myCourses}
-          renderItem={renderCourseItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-        />
-      </ListContainer>
+      <FlatList
+        data={myCourses}
+        renderItem={renderCourseItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
     </Container>
   );
 }

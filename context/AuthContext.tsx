@@ -7,7 +7,14 @@ import React, {
   ReactNode,
 } from "react";
 import { User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 import { User } from "../types";
 import { auth, db } from "../config/firebase";
 
@@ -28,37 +35,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [purchasedCourses, setPurchasedCourses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  console.log("AuthProvider inicializando...");
-
   useEffect(() => {
-    console.log("Iniciando onAuthStateChanged...");
+    console.log("AuthProvider inicializando...");
 
     const unsubscribe = auth.onAuthStateChanged(
       async (firebaseUser: FirebaseUser | null) => {
-        console.log(
-          "onAuthStateChanged chamado:",
-          firebaseUser?.email || "null",
-        );
+        console.log("Auth changed:", firebaseUser?.email || "null");
 
         if (firebaseUser) {
           try {
-            console.log("Buscando dados do usuário no Firestore...");
             const userRef = doc(db, "users", firebaseUser.uid);
             const userSnap = await getDoc(userRef);
 
             let courses: string[] = [];
             if (userSnap.exists()) {
               courses = userSnap.data()?.purchasedCourses || [];
-              console.log("Dados do Firestore:", courses.length, "cursos");
             } else {
-              console.log("Criando documento do usuário...");
               await setDoc(userRef, {
                 purchasedCourses: [],
                 email: firebaseUser.email,
                 displayName: firebaseUser.displayName || "",
                 createdAt: new Date().toISOString(),
               });
-              courses = [];
             }
 
             const userData: User = {
@@ -69,78 +67,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               purchasedCourses: courses,
             };
 
-            console.log("User carregado:", userData.email);
             setUser(userData);
             setPurchasedCourses(courses);
+
+            const unsubUser = onSnapshot(userRef, (snap) => {
+              if (snap.exists()) {
+                const data = snap.data() as any;
+                const newCourses = data.purchasedCourses || [];
+                setPurchasedCourses(newCourses);
+                console.log("Cursos atualizados:", newCourses.length);
+              }
+            });
+
+            return () => unsubUser();
           } catch (error) {
-            console.error("Erro Firestore:", error);
-            const userData: User = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email || null,
-              displayName: firebaseUser.displayName || null,
-              photoURL: firebaseUser.photoURL || null,
-              purchasedCourses: [],
-            };
-            setUser(userData);
-            setPurchasedCourses([]);
+            console.error("Firestore error:", error);
           }
         } else {
-          console.log("Usuário deslogado");
           setUser(null);
           setPurchasedCourses([]);
         }
-
-        console.log("AuthContext loading = false");
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Erro no onAuthStateChanged:", error);
         setLoading(false);
       },
     );
 
-    return () => {
-      console.log("Limpando AuthContext");
-      unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
-  const purchaseCourse = useCallback(async (courseId: string) => {
-    console.log("purchaseCourse:", courseId);
-  }, []);
+  const purchaseCourse = useCallback(
+    async (courseId: string) => {
+      if (!user) throw new Error("Não autenticado");
+
+      try {
+        console.log("Comprando:", courseId);
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, {
+          purchasedCourses: arrayUnion(courseId),
+        });
+        console.log("Compra OK!");
+      } catch (error: any) {
+        console.error("Compra error:", error);
+        throw error;
+      }
+    },
+    [user],
+  );
 
   const login = useCallback(async (email: string, password: string) => {
-    console.log("login chamado:", email);
-    try {
-      const { signInWithEmailAndPassword } = await import("firebase/auth");
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-      console.log("signInWithEmailAndPassword OK");
-    } catch (error: any) {
-      console.error("signInWithEmailAndPassword erro:", error);
-      throw error;
-    }
+    const { signInWithEmailAndPassword } = await import("firebase/auth");
+    await signInWithEmailAndPassword(auth, email.trim(), password);
   }, []);
 
   const signup = useCallback(async (email: string, password: string) => {
-    console.log("signup chamado:", email);
-    try {
-      const { createUserWithEmailAndPassword } = await import("firebase/auth");
-      await createUserWithEmailAndPassword(auth, email.trim(), password);
-    } catch (error: any) {
-      console.error("signup erro:", error);
-      throw error;
-    }
+    const { createUserWithEmailAndPassword } = await import("firebase/auth");
+    await createUserWithEmailAndPassword(auth, email.trim(), password);
   }, []);
 
   const logout = useCallback(async () => {
-    console.log("logout chamado");
-    try {
-      const { signOut } = await import("firebase/auth");
-      await signOut(auth);
-    } catch (error: any) {
-      console.error("logout erro:", error);
-      throw error;
-    }
+    const { signOut } = await import("firebase/auth");
+    await signOut(auth);
   }, []);
 
   const value: AuthContextValue = {
@@ -153,7 +138,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     purchaseCourse,
   };
 
-  console.log("AuthProvider render - loading:", loading, "user:", user?.email);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -6,6 +6,7 @@ import { CourseCard } from "../../components/molecules/CourseCard";
 import { UserHeader } from "../../components/organisms/UserHeader";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
+import { useCourses } from "../../context/CoursesContext";
 
 const Container = styled(SafeAreaView)`
   flex: 1;
@@ -17,15 +18,15 @@ const ListContainer = styled.View`
 `;
 
 export default function CoursesScreen() {
-  const { user, logout, purchasedCourses } = useAuth();
+  const { user, logout } = useAuth();
+  const { purchasedCourses } = useCourses();
+
+  console.log("📚 Cursos - User:", user?.email, "Comprados:", purchasedCourses);
 
   const renderCourseItem = ({
     item,
   }: ListRenderItemInfo<(typeof COURSES)[number]>) => (
-    <CourseCard
-      course={item}
-      isPurchased={purchasedCourses?.includes(item.id) || false}
-    />
+    <CourseCard course={item} />
   );
 
   return (

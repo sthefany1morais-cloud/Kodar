@@ -25,12 +25,4 @@ export const COURSES: Course[] = [
     price: 19.9,
     duration: "6h 20min",
   },
-  {
-    id: "firebase",
-    title: "Firebase Completo com React Native",
-    thumbnail: "https://img.youtube.com/vi/abc123/maxresdefault.jpg", // Substitua pelo vídeo real
-    youtubeUrl: "https://www.youtube.com/watch?v=abc123",
-    price: 34.9,
-    duration: "15h 10min",
-  },
 ];
