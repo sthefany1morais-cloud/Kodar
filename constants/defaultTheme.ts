@@ -1,0 +1,32 @@
+export const defaultTheme = {
+  colors: {
+    primary: "#6366F1",
+    primaryLight: "#818CF8",
+    primaryDark: "#4F46E5",
+    secondary: "#10B981",
+    background: "#FAFAFA",
+    surface: "#FFFFFF",
+    surfaceSecondary: "#F8FAFC",
+    text: "#1E293B",
+    textSecondary: "#64748B",
+    textLight: "#94A3B8",
+    error: "#EF4444",
+    border: "#E2E8F0",
+    borderLight: "#F1F5F9",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 24,
+    xxl: 32,
+  },
+  borderRadius: {
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 24,
+    full: 9999,
+  },
+} as const;
