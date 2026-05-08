@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, Alert } from "react-native";
 import { router } from "expo-router";
 import styled from "styled-components/native";
 import { Button } from "../components/atoms/Button";
@@ -54,9 +54,18 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
+
+  console.log(
+    "LoginScreen - authLoading:",
+    authLoading,
+    "user:",
+    user?.email,
+  );
 
   const handleLogin = async () => {
+    console.log("Tentando login com:", email);
+
     if (!email || !password) {
       setError("Preencha todos os campos");
       return;
@@ -66,16 +75,22 @@ export default function LoginScreen() {
     setError("");
 
     try {
+      console.log("Chamando login do AuthContext...");
       await login(email, password);
-      router.replace("/(auth)/home");
+      console.log("Login bem-sucedido! Redirecionando...");
+
+      router.push("/(auth)/home");
     } catch (err: any) {
+      console.error("Erro no login:", err);
       setError(err.message || "Erro ao fazer login");
+      Alert.alert("Erro", err.message || "Erro ao fazer login");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
+  if (authLoading) {
+    console.log("LoginScreen mostrando loading do AuthContext");
     return (
       <LoadingContainer>
         <Loading />
@@ -111,7 +126,7 @@ export default function LoginScreen() {
           variant="primary"
           size="lg"
           onPress={handleLogin}
-          disabled={loading || !email || !password}
+          disabled={loading || authLoading || !email || !password}
           style={{ marginTop: 16 }}
         >
           Entrar
@@ -122,7 +137,7 @@ export default function LoginScreen() {
             variant="outline"
             size="lg"
             onPress={() => router.push("/register")}
-            disabled={loading}
+            disabled={loading || authLoading}
           >
             Criar conta
           </Button>

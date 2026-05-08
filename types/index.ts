@@ -3,10 +3,19 @@ export interface User {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  purchasedCourses: string[]; // IDs dos cursos comprados
 }
 
 export interface Course {
   id: string;
   title: string;
-  image: string;
+  thumbnail: string;
+  youtubeUrl: string;
+  price: number;
+  duration?: string;
+}
+
+export interface PurchasedCourse extends Course {
+  progress: number; // 0-100
+  lastWatched: number; // timestamp
 }

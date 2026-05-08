@@ -7,96 +7,153 @@ import React, {
   ReactNode,
 } from "react";
 import { User as FirebaseUser } from "firebase/auth";
-import { User as UserType } from "../types";
-import { auth } from "../config/firebase";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import { User } from "../types";
+import { auth, db } from "../config/firebase";
 
 interface AuthContextValue {
-  user: UserType | null;
+  user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  purchaseCourse: (courseId: string) => Promise<void>;
+  purchasedCourses: string[];
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserType | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [purchasedCourses, setPurchasedCourses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  console.log("AuthProvider inicializando...");
+
   useEffect(() => {
+    console.log("Iniciando onAuthStateChanged...");
+
     const unsubscribe = auth.onAuthStateChanged(
-      (firebaseUser: FirebaseUser | null) => {
-        console.log("Auth State:", firebaseUser?.email || "logout");
+      async (firebaseUser: FirebaseUser | null) => {
+        console.log(
+          "onAuthStateChanged chamado:",
+          firebaseUser?.email || "null",
+        );
 
         if (firebaseUser) {
-          const userData: UserType = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email || null,
-            displayName: firebaseUser.displayName || null,
-            photoURL: firebaseUser.photoURL || null,
-          };
-          setUser(userData);
+          try {
+            console.log("Buscando dados do usuário no Firestore...");
+            const userRef = doc(db, "users", firebaseUser.uid);
+            const userSnap = await getDoc(userRef);
+
+            let courses: string[] = [];
+            if (userSnap.exists()) {
+              courses = userSnap.data()?.purchasedCourses || [];
+              console.log("Dados do Firestore:", courses.length, "cursos");
+            } else {
+              console.log("Criando documento do usuário...");
+              await setDoc(userRef, {
+                purchasedCourses: [],
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName || "",
+                createdAt: new Date().toISOString(),
+              });
+              courses = [];
+            }
+
+            const userData: User = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || null,
+              displayName: firebaseUser.displayName || null,
+              photoURL: firebaseUser.photoURL || null,
+              purchasedCourses: courses,
+            };
+
+            console.log("User carregado:", userData.email);
+            setUser(userData);
+            setPurchasedCourses(courses);
+          } catch (error) {
+            console.error("Erro Firestore:", error);
+            const userData: User = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || null,
+              displayName: firebaseUser.displayName || null,
+              photoURL: firebaseUser.photoURL || null,
+              purchasedCourses: [],
+            };
+            setUser(userData);
+            setPurchasedCourses([]);
+          }
         } else {
+          console.log("Usuário deslogado");
           setUser(null);
+          setPurchasedCourses([]);
         }
+
+        console.log("AuthContext loading = false");
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Erro no onAuthStateChanged:", error);
         setLoading(false);
       },
     );
 
-    return () => unsubscribe();
+    return () => {
+      console.log("Limpando AuthContext");
+      unsubscribe();
+    };
+  }, []);
+
+  const purchaseCourse = useCallback(async (courseId: string) => {
+    console.log("purchaseCourse:", courseId);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    console.log("login chamado:", email);
     try {
-      setLoading(true);
       const { signInWithEmailAndPassword } = await import("firebase/auth");
-      console.log("Login:", email);
       await signInWithEmailAndPassword(auth, email.trim(), password);
+      console.log("signInWithEmailAndPassword OK");
     } catch (error: any) {
-      console.error("Login Error:", error);
+      console.error("signInWithEmailAndPassword erro:", error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const signup = useCallback(async (email: string, password: string) => {
+    console.log("signup chamado:", email);
     try {
-      setLoading(true);
       const { createUserWithEmailAndPassword } = await import("firebase/auth");
-      console.log("Signup:", email);
       await createUserWithEmailAndPassword(auth, email.trim(), password);
     } catch (error: any) {
-      console.error("Signup Error:", error);
+      console.error("signup erro:", error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const logout = useCallback(async () => {
+    console.log("logout chamado");
     try {
-      setLoading(true);
       const { signOut } = await import("firebase/auth");
-      console.log("Logout");
       await signOut(auth);
     } catch (error: any) {
-      console.error("Logout Error:", error);
+      console.error("logout erro:", error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const value: AuthContextValue = {
     user,
     loading,
+    purchasedCourses,
     login,
     signup,
     logout,
+    purchaseCourse,
   };
 
+  console.log("AuthProvider render - loading:", loading, "user:", user?.email);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -9,18 +9,26 @@ export default function AuthLayout() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#fafafa",
+        }}
+      >
         <Loading />
       </View>
     );
   }
 
-  if (!user) {
-    return <Redirect href="/login" />;
+  if (user) {
+    return <Redirect href="/(tabs)" />;
   }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
       <Stack.Screen name="home" />
     </Stack>
   );
