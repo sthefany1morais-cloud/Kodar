@@ -11,6 +11,7 @@ import {
   StatusBar,
 } from "react-native";
 import { WebView } from "react-native-webview";
+import * as ScreenOrientation from "expo-screen-orientation";
 import styled from "styled-components/native";
 import { Course } from "../../types";
 
@@ -93,6 +94,39 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const webViewRef = useRef<WebView>(null);
+
+  useEffect(() => {
+    const handleOrientation = async () => {
+      if (visible) {
+        try {
+          await ScreenOrientation.unlockAsync();
+          StatusBar.setHidden(true, "fade");
+          console.log("Rotação liberada - Landscape OK");
+        } catch (error) {
+          console.log("Rotação não suportada neste dispositivo");
+        }
+      } else {
+        try {
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.PORTRAIT_UP,
+          );
+          StatusBar.setHidden(false);
+          console.log("Rotação travada - Portrait");
+        } catch (error) {
+          console.log("Lock falhou");
+        }
+      }
+    };
+
+    handleOrientation();
+
+    return () => {
+      ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+      ).catch(console.log);
+      StatusBar.setHidden(false);
+    };
+  }, [visible]);
 
   const getYouTubeVideoId = (url: string): string => {
     const regex =
