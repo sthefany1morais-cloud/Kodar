@@ -7,14 +7,7 @@ import React, {
   ReactNode,
 } from "react";
 import { User as FirebaseUser } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot,
-  updateDoc,
-  arrayUnion,
-} from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { User } from "../types";
 import { auth, db } from "../config/firebase";
 
@@ -24,19 +17,16 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  purchaseCourse: (courseId: string) => Promise<void>;
-  purchasedCourses: string[];
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [purchasedCourses, setPurchasedCourses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("AuthProvider inicializando...");
+    console.log("🔐 AuthProvider inicializando...");
 
     const unsubscribe = auth.onAuthStateChanged(
       async (firebaseUser: FirebaseUser | null) => {
@@ -47,45 +37,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userRef = doc(db, "users", firebaseUser.uid);
             const userSnap = await getDoc(userRef);
 
-            let courses: string[] = [];
+            let userData: User;
+
             if (userSnap.exists()) {
-              courses = userSnap.data()?.purchasedCourses || [];
+              const data = userSnap.data() as any;
+              userData = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || null,
+                displayName:
+                  firebaseUser.displayName || data.displayName || null,
+                photoURL: firebaseUser.photoURL || null,
+                purchasedCourses: data.purchasedCourses || [],
+              };
             } else {
+              // Cria usuário no Firestore
               await setDoc(userRef, {
                 purchasedCourses: [],
                 email: firebaseUser.email,
                 displayName: firebaseUser.displayName || "",
                 createdAt: new Date().toISOString(),
               });
+
+              userData = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || null,
+                displayName: firebaseUser.displayName || null,
+                photoURL: firebaseUser.photoURL || null,
+                purchasedCourses: [],
+              };
             }
 
-            const userData: User = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email || null,
-              displayName: firebaseUser.displayName || null,
-              photoURL: firebaseUser.photoURL || null,
-              purchasedCourses: courses,
-            };
-
             setUser(userData);
-            setPurchasedCourses(courses);
-
-            const unsubUser = onSnapshot(userRef, (snap) => {
-              if (snap.exists()) {
-                const data = snap.data() as any;
-                const newCourses = data.purchasedCourses || [];
-                setPurchasedCourses(newCourses);
-                console.log("Cursos atualizados:", newCourses.length);
-              }
-            });
-
-            return () => unsubUser();
           } catch (error) {
             console.error("Firestore error:", error);
+            setUser(null);
           }
         } else {
           setUser(null);
-          setPurchasedCourses([]);
         }
         setLoading(false);
       },
@@ -93,25 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return unsubscribe;
   }, []);
-
-  const purchaseCourse = useCallback(
-    async (courseId: string) => {
-      if (!user) throw new Error("Não autenticado");
-
-      try {
-        console.log("Comprando:", courseId);
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, {
-          purchasedCourses: arrayUnion(courseId),
-        });
-        console.log("Compra OK!");
-      } catch (error: any) {
-        console.error("Compra error:", error);
-        throw error;
-      }
-    },
-    [user],
-  );
 
   const login = useCallback(async (email: string, password: string) => {
     const { signInWithEmailAndPassword } = await import("firebase/auth");
@@ -131,11 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     user,
     loading,
-    purchasedCourses,
     login,
     signup,
     logout,
-    purchaseCourse,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

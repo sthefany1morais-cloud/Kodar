@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { View } from "react-native";
 import { Loading } from "../../components/atoms/Loading";
 
-export default function AuthLayout() {
+export default function SobreNosLayout() {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -29,7 +29,6 @@ export default function AuthLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="home" />
     </Stack>
   );
 }

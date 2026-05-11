@@ -1,18 +1,9 @@
 import React from "react";
-import { TouchableOpacityProps, Alert, Linking } from "react-native";
+import { TouchableOpacityProps, Alert, Linking, Image } from "react-native";
 import styled from "styled-components/native";
 import { Button } from "../atoms/Button";
-import { useAuth } from "../../context/AuthContext";
-import { COURSES } from "../../constants/courses";
-
-interface Course {
-  id: string;
-  title: string;
-  thumbnail: string;
-  youtubeUrl: string;
-  price: number;
-  duration?: string;
-}
+import { useCourses } from "../../context/CoursesContext"; // ← IMPORT CORRETO
+import { Course } from "../../types"; // ← IMPORT DO TYPE
 
 interface CourseCardProps extends TouchableOpacityProps {
   course: Course;
@@ -54,7 +45,7 @@ const PriceTag = styled.Text`
 `;
 
 export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
-  const { purchaseCourse, purchasedCourses } = useAuth();
+  const { purchaseCourse, purchasedCourses } = useCourses(); // ✅ AGORA FUNCIONA
   const isPurchased = purchasedCourses.includes(course.id);
 
   const handlePurchase = async () => {
@@ -77,7 +68,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
     <Card>
       <CourseThumbnail source={{ uri: course.thumbnail }} />
       <CourseTitle>{course.title}</CourseTitle>
-      <CourseDuration>{course.duration}</CourseDuration>
+      {course.duration && <CourseDuration>{course.duration}</CourseDuration>}
 
       {isPurchased ? (
         <Button
@@ -86,7 +77,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
           onPress={handleWatch}
           style={{ width: "100%" }}
         >
-          🎥 Assistir Agora
+          ▶️ Assistir Agora
         </Button>
       ) : (
         <>

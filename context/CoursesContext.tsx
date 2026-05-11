@@ -5,14 +5,14 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { useAuth } from "./AuthContext";
-import { COURSES } from "../constants/courses";
 
 interface CoursesContextValue {
   purchasedCourses: string[];
   loading: boolean;
+  purchaseCourse: (courseId: string) => Promise<void>;
 }
 
 const CoursesContext = createContext<CoursesContextValue | null>(null);
@@ -24,11 +24,12 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) {
+      setPurchasedCourses([]);
       setLoading(false);
       return;
     }
 
-    console.log("📚 CoursesContext - ouvindo:", user.uid);
+    console.log("CoursesContext - ouvindo:", user.uid);
     const userRef = doc(db, "users", user.uid);
 
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
@@ -36,16 +37,40 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
         const data = docSnap.data() as any;
         const courses = data?.purchasedCourses || [];
         setPurchasedCourses(courses);
-        console.log("📊 Cursos atualizados:", courses.length);
+        console.log("Cursos atualizados:", courses.length);
+      } else {
+        setPurchasedCourses([]);
       }
       setLoading(false);
     });
 
     return unsubscribe;
-  }, [user]);
+  }, [user?.uid]);
+
+  const purchaseCourse = async (courseId: string) => {
+    if (!user) throw new Error("Não autenticado");
+
+    try {
+      console.log("Comprando:", courseId);
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        purchasedCourses: arrayUnion(courseId),
+      });
+      console.log("Compra OK!");
+    } catch (error: any) {
+      console.error("Compra error:", error);
+      throw error;
+    }
+  };
 
   return (
-    <CoursesContext.Provider value={{ purchasedCourses, loading }}>
+    <CoursesContext.Provider
+      value={{
+        purchasedCourses,
+        loading,
+        purchaseCourse,
+      }}
+    >
       {children}
     </CoursesContext.Provider>
   );

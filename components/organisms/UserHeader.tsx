@@ -1,13 +1,10 @@
 import React from "react";
 import { Image, Alert } from "react-native";
+import { router } from "expo-router";
 import styled from "styled-components/native";
 import { Button } from "../atoms/Button";
+import { useAuth } from "../../context/AuthContext";
 import { User } from "../../types";
-
-interface UserHeaderProps {
-  user: User | null;
-  onLogout: () => void;
-}
 
 const Header = styled.View`
   padding: 32px 24px;
@@ -34,11 +31,24 @@ const WelcomeText = styled.Text`
   flex: 1;
 `;
 
-export const UserHeader: React.FC<UserHeaderProps> = ({ user, onLogout }) => {
+export const UserHeader: React.FC<{ user: User | null }> = ({ user }) => {
+  const { logout } = useAuth();
+
   const handleLogout = () => {
     Alert.alert("Sair", "Deseja realmente sair?", [
       { text: "Cancelar" },
-      { text: "Sair", style: "destructive", onPress: onLogout },
+      {
+        text: "Sair",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logout();
+            router.replace("/"); // ✅ Vai para index geral (tela inicial)
+          } catch (error) {
+            console.error("Erro no logout:", error);
+          }
+        },
+      },
     ]);
   };
 
