@@ -1,9 +1,10 @@
-import React from "react";
-import { TouchableOpacityProps, Alert, Linking, Image } from "react-native";
+import React, { useState } from "react";
+import { TouchableOpacityProps, Alert, Image } from "react-native";
 import styled from "styled-components/native";
 import { Button } from "../atoms/Button";
 import { useCourses } from "../../context/CoursesContext";
 import { Course } from "../../types";
+import { VideoPlayer } from "../organisms/VideoPlayer";
 
 interface CourseCardProps extends TouchableOpacityProps {
   course: Course;
@@ -46,7 +47,12 @@ const PriceTag = styled.Text`
 
 export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   const { purchaseCourse, purchasedCourses } = useCourses();
+  const [showVideo, setShowVideo] = useState(false);
   const isPurchased = purchasedCourses.includes(course.id);
+
+  console.log(
+    `CourseCard ${course.id}: purchased=${isPurchased}, showVideo=${showVideo}`,
+  );
 
   const handlePurchase = async () => {
     try {
@@ -58,40 +64,55 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   };
 
   const handleWatch = () => {
-    Alert.alert("YouTube", `Abrir "${course.title}"?`, [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Abrir", onPress: () => Linking.openURL(course.youtubeUrl) },
-    ]);
+    console.log(`▶Tentando assistir ${course.id}`);
+    if (isPurchased) {
+      console.log(`Abrindo vídeo ${course.id}`);
+      setShowVideo(true);
+    } else {
+      console.log(`${course.id} não comprado`);
+      Alert.alert("Curso não comprado", "Compre o curso para assistir!");
+    }
+  };
+
+  const closeVideo = () => {
+    console.log(`Fechando vídeo ${course.id}`);
+    setShowVideo(false);
   };
 
   return (
-    <Card>
-      <CourseThumbnail source={{ uri: course.thumbnail }} />
-      <CourseTitle>{course.title}</CourseTitle>
-      {course.duration && <CourseDuration>{course.duration}</CourseDuration>}
+    <>
+      <Card onPress={handleWatch}>
+        <CourseThumbnail source={{ uri: course.thumbnail }} />
+        <CourseTitle>{course.title}</CourseTitle>
+        {course.duration && <CourseDuration>{course.duration}</CourseDuration>}
 
-      {isPurchased ? (
-        <Button
-          variant="secondary"
-          size="lg"
-          onPress={handleWatch}
-          style={{ width: "100%" }}
-        >
-          ▶ Assistir Agora
-        </Button>
-      ) : (
-        <>
-          <PriceTag>R$ {course.price.toFixed(2)}</PriceTag>
+        {isPurchased ? (
           <Button
-            variant="primary"
+            variant="secondary"
             size="lg"
-            onPress={handlePurchase}
+            onPress={handleWatch}
             style={{ width: "100%" }}
           >
-            Comprar Curso
+            ▶ Assistir Agora
           </Button>
-        </>
+        ) : (
+          <>
+            <PriceTag>R$ {course.price.toFixed(2)}</PriceTag>
+            <Button
+              variant="primary"
+              size="lg"
+              onPress={handlePurchase}
+              style={{ width: "100%" }}
+            >
+              Comprar Curso
+            </Button>
+          </>
+        )}
+      </Card>
+
+      {showVideo && (
+        <VideoPlayer course={course} visible={showVideo} onClose={closeVideo} />
       )}
-    </Card>
+    </>
   );
 };

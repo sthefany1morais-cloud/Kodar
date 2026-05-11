@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { ThemeProvider } from "../context/ThemeContext";
 import { AuthProvider } from "../context/AuthContext";
 import { CoursesProvider } from "../context/CoursesContext";
+import { VideoPlayer } from "../components/organisms/VideoPlayer";
 import { useEffect, useState } from "react";
 import { Redirect, usePathname, useRouter } from "expo-router";
 import { useAuth } from "../context/AuthContext";
