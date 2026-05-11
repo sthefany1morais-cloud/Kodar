@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Modal,
   View,
@@ -8,6 +8,7 @@ import {
   Text,
   StyleSheet,
   Platform,
+  StatusBar,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import styled from "styled-components/native";
@@ -15,39 +16,11 @@ import { Course } from "../../types";
 
 const { width: screenWidth } = Dimensions.get("window");
 
-const ModalContainer = styled(Modal)`
-  flex: 1;
-  background-color: rgba(0, 0, 0, 0.95);
-`;
-
-const VideoContainer = styled(View)`
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-`;
-
-const CloseButton = styled(TouchableOpacity)`
-  position: absolute;
-  top: 60px;
-  right: 20px;
-  z-index: 1000;
-  background-color: rgba(0, 0, 0, 0.7);
-  border-radius: 20px;
-  padding: 12px 16px;
-`;
-
-const CloseButtonText = styled(Text)`
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 600;
-`;
-
 const styles = StyleSheet.create({
   loadingContainer: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
+    position: "absolute" as const,
+    top: "50%" as const,
+    left: "50%" as const,
     transform: [{ translateX: -25 }, { translateY: -25 }],
   },
   errorText: {
@@ -55,8 +28,56 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     marginTop: 20,
+    fontWeight: "500",
   },
 });
+
+const ModalContainer = styled(Modal)`
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.98);
+`;
+
+const VideoContainer = styled(View)`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  padding: ${Platform.OS === "ios" ? "40px" : "20px"};
+`;
+
+const CloseButton = styled(TouchableOpacity)`
+  position: absolute;
+  top: ${Platform.OS === "ios" ? "70px" : "50px"};
+  right: 20px;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 25px;
+  padding: 15px 20px;
+`;
+
+const CloseButtonText = styled(Text)`
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+`;
+
+const VideoWrapper = styled(View)`
+  width: 95%;
+  max-width: 500px;
+  height: 60%;
+  max-height: 300px;
+  background-color: #000;
+  border-radius: 20px;
+  overflow: hidden;
+`;
+
+const TitleText = styled(Text)`
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 10px;
+`;
 
 interface VideoPlayerProps {
   course: Course;
@@ -84,13 +105,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   if (!videoId || !visible) return null;
 
   const youtubeEmbedUrl = Platform.select({
-    android: `https://m.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`,
-    ios: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`,
-    default: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`,
+    android: `https://m.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&fs=1`,
+    ios: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&fs=1`,
+    default: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&fs=1`,
   });
 
   const injectedJavaScript = `
-    document.querySelector('video').play();
+    (function() {
+      setTimeout(() => {
+        const video = document.querySelector('video');
+        if (video) video.play();
+      }, 1000);
+    })();
     true;
   `;
 
@@ -106,21 +132,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <CloseButtonText>✕</CloseButtonText>
         </CloseButton>
 
+        <TitleText>{course.title}</TitleText>
+
         {loading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#6366f1" />
           </View>
         )}
 
-        <View
-          style={{
-            width: screenWidth - 40,
-            height: (screenWidth - 40) * 0.5625,
-            backgroundColor: "#000",
-            borderRadius: 12,
-            overflow: "hidden",
-          }}
-        >
+        <VideoWrapper>
           <WebView
             ref={webViewRef}
             source={{ uri: youtubeEmbedUrl }}
@@ -132,26 +152,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             mixedContentMode="always"
             allowsInlineMediaPlayback
             onLoadStart={() => {
-              console.log("WebView carregando:", youtubeEmbedUrl);
               setLoading(true);
               setError(false);
             }}
-            onLoad={() => {
-              console.log("WebView carregado!");
-              setLoading(false);
-            }}
-            onError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.error("WebView erro:", nativeEvent);
+            onLoad={() => setLoading(false)}
+            onError={() => {
               setLoading(false);
               setError(true);
             }}
             injectedJavaScript={injectedJavaScript}
-            onMessage={(event) =>
-              console.log("WebView message:", event.nativeEvent.data)
-            }
+            scrollEnabled={false}
+            bounces={false}
           />
-        </View>
+        </VideoWrapper>
 
         {error && (
           <Text style={styles.errorText}>
