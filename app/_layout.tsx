@@ -38,38 +38,29 @@ function AuthGate() {
   const router = useRouter();
   const [hasRedirected, setHasRedirected] = useState(false);
 
-  // Evita múltiplos redirecionamentos
   useEffect(() => {
     if (loading || hasRedirected) return;
 
-    console.log(
-      "🔐 AuthGate - user:",
-      user?.email || "null",
-      "path:",
-      pathname,
-    );
+    console.log("AuthGate - user:", user?.email || "null", "path:", pathname);
 
-    // SE NÃO ESTÁ LOGADO e está em rota PROTEGIDA (tabs)
     if (!user && pathname.startsWith("/(tabs)")) {
-      console.log("🚫 Não logado em tabs → /");
+      console.log("Não logado em tabs → /");
       setHasRedirected(true);
       router.replace("/");
       return;
     }
 
-    // SE ESTÁ LOGADO e está em tela pública
     if (
       user &&
       (pathname === "/" || pathname === "/login" || pathname === "/register")
     ) {
-      console.log("✅ Logado em público → /(tabs)");
+      console.log("Logado em público → /(tabs)");
       setHasRedirected(true);
       router.replace("/(tabs)");
       return;
     }
   }, [user, pathname, loading, hasRedirected, router]);
 
-  // Loading
   if (loading) {
     return (
       <View
@@ -85,6 +76,5 @@ function AuthGate() {
     );
   }
 
-  // Renderiza navegação normal
   return <RootLayoutNav />;
 }

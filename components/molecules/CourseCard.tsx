@@ -2,8 +2,8 @@ import React from "react";
 import { TouchableOpacityProps, Alert, Linking, Image } from "react-native";
 import styled from "styled-components/native";
 import { Button } from "../atoms/Button";
-import { useCourses } from "../../context/CoursesContext"; // ← IMPORT CORRETO
-import { Course } from "../../types"; // ← IMPORT DO TYPE
+import { useCourses } from "../../context/CoursesContext";
+import { Course } from "../../types";
 
 interface CourseCardProps extends TouchableOpacityProps {
   course: Course;
@@ -45,7 +45,7 @@ const PriceTag = styled.Text`
 `;
 
 export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
-  const { purchaseCourse, purchasedCourses } = useCourses(); // ✅ AGORA FUNCIONA
+  const { purchaseCourse, purchasedCourses } = useCourses();
   const isPurchased = purchasedCourses.includes(course.id);
 
   const handlePurchase = async () => {
@@ -77,7 +77,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
           onPress={handleWatch}
           style={{ width: "100%" }}
         >
-          ▶️ Assistir Agora
+          ▶ Assistir Agora
         </Button>
       ) : (
         <>

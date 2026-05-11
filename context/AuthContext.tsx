@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("🔐 AuthProvider inicializando...");
+    console.log("AuthProvider inicializando...");
 
     const unsubscribe = auth.onAuthStateChanged(
       async (firebaseUser: FirebaseUser | null) => {
@@ -50,7 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 purchasedCourses: data.purchasedCourses || [],
               };
             } else {
-              // Cria usuário no Firestore
               await setDoc(userRef, {
                 purchasedCourses: [],
                 email: firebaseUser.email,

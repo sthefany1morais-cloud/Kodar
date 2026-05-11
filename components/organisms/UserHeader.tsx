@@ -43,7 +43,7 @@ export const UserHeader: React.FC<{ user: User | null }> = ({ user }) => {
         onPress: async () => {
           try {
             await logout();
-            router.replace("/"); // ✅ Vai para index geral (tela inicial)
+            router.replace("/");
           } catch (error) {
             console.error("Erro no logout:", error);
           }
