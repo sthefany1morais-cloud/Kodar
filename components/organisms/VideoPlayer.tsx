@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Text,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import styled from "styled-components/native";
@@ -68,8 +69,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   visible,
   onClose,
 }) => {
-  console.log("VideoPlayer:", course.id, "visible:", visible);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const webViewRef = useRef<WebView>(null);
@@ -84,7 +83,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoId = getYouTubeVideoId(course.youtubeUrl);
   if (!videoId || !visible) return null;
 
-  const youtubeEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1`;
+  const youtubeEmbedUrl = Platform.select({
+    android: `https://m.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`,
+    ios: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`,
+    default: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`,
+  });
+
+  const injectedJavaScript = `
+    document.querySelector('video').play();
+    true;
+  `;
 
   return (
     <ModalContainer
@@ -120,18 +128,36 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             allowsFullscreenVideo
             javaScriptEnabled
             domStorageEnabled
-            onLoadStart={() => setLoading(true)}
-            onLoad={() => setLoading(false)}
-            onError={() => {
+            mediaPlaybackRequiresUserAction={false}
+            mixedContentMode="always"
+            allowsInlineMediaPlayback
+            onLoadStart={() => {
+              console.log("WebView carregando:", youtubeEmbedUrl);
+              setLoading(true);
+              setError(false);
+            }}
+            onLoad={() => {
+              console.log("WebView carregado!");
+              setLoading(false);
+            }}
+            onError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              console.error("WebView erro:", nativeEvent);
               setLoading(false);
               setError(true);
             }}
-            mediaPlaybackRequiresUserAction={false}
-            mixedContentMode="always"
+            injectedJavaScript={injectedJavaScript}
+            onMessage={(event) =>
+              console.log("WebView message:", event.nativeEvent.data)
+            }
           />
         </View>
 
-        {error && <Text style={styles.errorText}>Erro ao carregar vídeo.</Text>}
+        {error && (
+          <Text style={styles.errorText}>
+            Erro ao carregar vídeo. Tente novamente.
+          </Text>
+        )}
       </VideoContainer>
     </ModalContainer>
   );
