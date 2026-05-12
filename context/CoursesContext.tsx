@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from "react";
 import { doc, onSnapshot, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../config/firebase";
@@ -32,53 +33,63 @@ export function CoursesProvider({ children }: { children: ReactNode }) {
     console.log("CoursesContext - ouvindo:", user.uid);
     const userRef = doc(db, "users", user.uid);
 
-    const unsubscribe = onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as any;
-        const courses = data?.purchasedCourses || [];
-        setPurchasedCourses(courses);
-        console.log("Cursos atualizados:", courses.length);
-      } else {
+    const unsubscribe = onSnapshot(
+      userRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const courses = data?.purchasedCourses || [];
+          setPurchasedCourses(Array.isArray(courses) ? courses : []);
+          console.log("Cursos atualizados:", courses.length);
+        } else {
+          setPurchasedCourses([]);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Erro no snapshot:", error);
         setPurchasedCourses([]);
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      },
+    );
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, [user?.uid]);
 
-  const purchaseCourse = async (courseId: string) => {
-    if (!user) throw new Error("Não autenticado");
+  const purchaseCourse = useCallback(
+    async (courseId: string) => {
+      if (!user) throw new Error("Não autenticado");
 
-    try {
-      console.log("Comprando:", courseId);
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        purchasedCourses: arrayUnion(courseId),
-      });
-      console.log("Compra OK!");
-    } catch (error: any) {
-      console.error("Compra error:", error);
-      throw error;
-    }
+      try {
+        console.log("Comprando:", courseId);
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, {
+          purchasedCourses: arrayUnion(courseId),
+        });
+        console.log("Compra OK!");
+      } catch (error: any) {
+        console.error("Compra error:", error);
+        throw new Error(error.message || "Erro ao comprar curso");
+      }
+    },
+    [user],
+  );
+
+  const value: CoursesContextValue = {
+    purchasedCourses,
+    loading,
+    purchaseCourse,
   };
 
   return (
-    <CoursesContext.Provider
-      value={{
-        purchasedCourses,
-        loading,
-        purchaseCourse,
-      }}
-    >
-      {children}
-    </CoursesContext.Provider>
+    <CoursesContext.Provider value={value}>{children}</CoursesContext.Provider>
   );
 }
 
 export function useCourses() {
   const context = useContext(CoursesContext);
-  if (!context)
+  if (!context) {
     throw new Error("useCourses deve estar dentro de CoursesProvider");
+  }
   return context;
 }

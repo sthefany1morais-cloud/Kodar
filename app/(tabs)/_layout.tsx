@@ -1,10 +1,7 @@
 import { Tabs } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import { useSegments } from "expo-router";
 
 export default function TabLayout() {
-  const segments = useSegments();
-
   return (
     <Tabs
       screenOptions={{

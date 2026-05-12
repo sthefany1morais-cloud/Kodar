@@ -1,13 +1,25 @@
 import { Stack } from "expo-router";
-import { ThemeProvider } from "../context/ThemeContext";
-import { AuthProvider } from "../context/AuthContext";
-import { CoursesProvider } from "../context/CoursesContext";
-import { VideoPlayer } from "../components/organisms/VideoPlayer";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { CoursesProvider } from "@/context/CoursesContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { useEffect, useState } from "react";
-import { Redirect, usePathname, useRouter } from "expo-router";
-import { useAuth } from "../context/AuthContext";
+import { usePathname, useRouter } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
 import { View } from "react-native";
-import { Loading } from "../components/atoms/Loading";
+import { Loading } from "@/components/atoms/Loading";
+import * as Notifications from "expo-notifications";
+
+// Configurar handler de notificações (CORRIGIDO)
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true, // ← ADICIONADO
+    shouldShowList: false, // ← ADICIONADO
+  }),
+});
 
 function RootLayoutNav() {
   return (
@@ -16,7 +28,7 @@ function RootLayoutNav() {
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
       <Stack.Screen name="(sobreNos)" />
-      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -26,7 +38,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <AuthProvider>
         <CoursesProvider>
-          <AuthGate />
+          <NotificationProvider>
+            <AuthGate />
+          </NotificationProvider>
         </CoursesProvider>
       </AuthProvider>
     </ThemeProvider>
@@ -60,7 +74,7 @@ function AuthGate() {
       router.replace("/(tabs)");
       return;
     }
-  }, [user, pathname, loading, hasRedirected, router]);
+  }, [user, loading, pathname, hasRedirected, router]);
 
   if (loading) {
     return (

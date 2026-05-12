@@ -4,7 +4,11 @@
     "strict": true,
     "paths": {
       "@firebase/auth": ["./node_modules/@firebase/auth/dist/index.rn.d.ts"],
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/components/*": ["./components/*"],
+      "@/context/*": ["./context/*"],
+      "@/constants/*": ["./constants/*"],
+      "@/types": ["./types/index.ts"]
     },
     "typeRoots": ["./node_modules/@types", "./src"],
     "skipLibCheck": true
