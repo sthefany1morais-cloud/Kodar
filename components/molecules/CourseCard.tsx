@@ -51,7 +51,6 @@ const LessonsCount = styled.Text`
   color: #64748b;
   margin-bottom: 16px;
 `;
-
 export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   const { purchaseCourse, purchasedCourses } = useCourses();
   const isPurchased = purchasedCourses.includes(course.id);
@@ -66,25 +65,29 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   };
 
   const handleOpenCourse = () => {
+    router.push(`/course/${course.id}`);
+  };
+
+  const handleViewLessons = () => {
     if (isPurchased) {
-      router.push(`/(tabs)/my-courses`);
-    } else {
-      Alert.alert(
-        "Curso não comprado",
-        "Compre o curso para acessar as aulas!",
-      );
+      router.push(`/course/${course.id}`);
     }
   };
 
   return (
-    <Card onPress={handleOpenCourse}>
+    <Card onPress={handleOpenCourse} activeOpacity={0.9}>
       <CourseThumbnail source={{ uri: course.thumbnail }} />
       <CourseTitle>{course.title}</CourseTitle>
       <CourseDuration>{course.totalDuration}</CourseDuration>
       <LessonsCount>{course.lessons.length} aulas</LessonsCount>
 
       {isPurchased ? (
-        <Button variant="secondary" size="lg" style={{ width: "100%" }}>
+        <Button
+          variant="secondary"
+          size="lg"
+          onPress={handleViewLessons}
+          style={{ width: "100%", marginTop: 8 }}
+        >
           Ver Aulas
         </Button>
       ) : (

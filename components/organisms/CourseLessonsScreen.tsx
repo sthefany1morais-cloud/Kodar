@@ -81,7 +81,7 @@ export function CourseLessonsScreen() {
           <Button
             variant="primary"
             style={{ marginTop: 16, width: "100%" }}
-            onPress={() => router.push("/(tabs)/my-courses")}
+            onPress={() => router.push(`/course/${course.id}`)}
           >
             Comprar para acessar
           </Button>

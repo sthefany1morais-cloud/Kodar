@@ -70,6 +70,8 @@ export default function CourseLessonsScreen() {
   const isPurchased = course ? purchasedCourses.includes(course.id) : false;
 
   useEffect(() => {
+    if (!id) return;
+
     const foundCourse = COURSES.find((c) => c.id === id);
     setCourse(foundCourse || null);
   }, [id]);
@@ -95,6 +97,7 @@ export default function CourseLessonsScreen() {
       Alert.alert(
         "Curso não comprado",
         "Compre o curso para assistir às aulas!",
+        [{ text: "OK" }],
       );
       return;
     }
@@ -126,7 +129,7 @@ export default function CourseLessonsScreen() {
             style={{ marginTop: 16, width: "100%" }}
             onPress={() => router.push("/(tabs)")}
           >
-            Comprar por R$ {course.price}
+            Comprar por R$ {course.price.toFixed(2)}
           </Button>
         )}
       </Header>
@@ -153,7 +156,10 @@ export default function CourseLessonsScreen() {
           videoId={currentLesson.youtubeVideoId}
           title={`${course.title} - ${currentLesson.title}`}
           visible={showVideo}
-          onClose={() => setShowVideo(false)}
+          onClose={() => {
+            setShowVideo(false);
+            setCurrentLesson(null);
+          }}
         />
       )}
     </Container>

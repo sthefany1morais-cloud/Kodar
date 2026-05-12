@@ -10,14 +10,13 @@ import { View } from "react-native";
 import { Loading } from "@/components/atoms/Loading";
 import * as Notifications from "expo-notifications";
 
-// Configurar handler de notificações (CORRIGIDO)
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
-    shouldShowBanner: true, // ← ADICIONADO
-    shouldShowList: false, // ← ADICIONADO
+    shouldShowBanner: true,
+    shouldShowList: false,
   }),
 });
 
