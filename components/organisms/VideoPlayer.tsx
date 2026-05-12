@@ -13,7 +13,6 @@ import {
 import { WebView } from "react-native-webview";
 import * as ScreenOrientation from "expo-screen-orientation";
 import styled from "styled-components/native";
-import { Course } from "../../types";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -81,13 +80,15 @@ const TitleText = styled(Text)`
 `;
 
 interface VideoPlayerProps {
-  course: Course;
+  videoId: string;
+  title: string;
   visible: boolean;
   onClose: () => void;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
-  course,
+  videoId,
+  title,
   visible,
   onClose,
 }) => {
@@ -128,14 +129,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
   }, [visible]);
 
-  const getYouTubeVideoId = (url: string): string => {
-    const regex =
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/;
-    const match = url.match(regex);
-    return match ? match[1] : "";
-  };
-
-  const videoId = getYouTubeVideoId(course.youtubeUrl);
   if (!videoId || !visible) return null;
 
   const youtubeEmbedUrl = Platform.select({
@@ -166,7 +159,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <CloseButtonText>✕</CloseButtonText>
         </CloseButton>
 
-        <TitleText>{course.title}</TitleText>
+        <TitleText>{title}</TitleText>
 
         {loading && (
           <View style={styles.loadingContainer}>

@@ -5,17 +5,25 @@ export interface User {
   photoURL: string | null;
   purchasedCourses: string[];
 }
+export interface Lesson {
+  id: string;
+  title: string;
+  youtubeVideoId: string;
+  duration?: string;
+  order: number;
+}
 
 export interface Course {
   id: string;
   title: string;
   thumbnail: string;
-  youtubeUrl: string;
+  playlistId: string;
   price: number;
-  duration?: string;
+  totalDuration?: string;
+  lessons: Lesson[];
 }
 
 export interface PurchasedCourse extends Course {
   progress: number;
-  lastWatched: number;
+  lastWatchedLessonId: string;
 }

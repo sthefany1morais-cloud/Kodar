@@ -1,12 +1,13 @@
-import React, { useState } from "react";
-import { TouchableOpacityProps, Alert, Image } from "react-native";
+import React from "react";
+import { Alert } from "react-native";
+import { router } from "expo-router";
 import styled from "styled-components/native";
+import { Image } from "react-native";
 import { Button } from "../atoms/Button";
 import { useCourses } from "../../context/CoursesContext";
 import { Course } from "../../types";
-import { VideoPlayer } from "../organisms/VideoPlayer";
 
-interface CourseCardProps extends TouchableOpacityProps {
+interface CourseCardProps {
   course: Course;
 }
 
@@ -45,74 +46,60 @@ const PriceTag = styled.Text`
   margin-bottom: 16px;
 `;
 
+const LessonsCount = styled.Text`
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 16px;
+`;
+
 export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   const { purchaseCourse, purchasedCourses } = useCourses();
-  const [showVideo, setShowVideo] = useState(false);
   const isPurchased = purchasedCourses.includes(course.id);
-
-  console.log(
-    `CourseCard ${course.id}: purchased=${isPurchased}, showVideo=${showVideo}`,
-  );
 
   const handlePurchase = async () => {
     try {
       await purchaseCourse(course.id);
-      Alert.alert("Sucesso!", "Curso comprado! Vá em 'Meus Cursos'");
+      Alert.alert("Sucesso!", "Curso comprado! Acesse 'Meus Cursos'");
     } catch (error: any) {
       Alert.alert("Erro", "Erro ao comprar: " + error.message);
     }
   };
 
-  const handleWatch = () => {
-    console.log(`▶Tentando assistir ${course.id}`);
+  const handleOpenCourse = () => {
     if (isPurchased) {
-      console.log(`Abrindo vídeo ${course.id}`);
-      setShowVideo(true);
+      router.push(`/(tabs)/my-courses`);
     } else {
-      console.log(`${course.id} não comprado`);
-      Alert.alert("Curso não comprado", "Compre o curso para assistir!");
+      Alert.alert(
+        "Curso não comprado",
+        "Compre o curso para acessar as aulas!",
+      );
     }
   };
 
-  const closeVideo = () => {
-    console.log(`Fechando vídeo ${course.id}`);
-    setShowVideo(false);
-  };
-
   return (
-    <>
-      <Card onPress={handleWatch}>
-        <CourseThumbnail source={{ uri: course.thumbnail }} />
-        <CourseTitle>{course.title}</CourseTitle>
-        {course.duration && <CourseDuration>{course.duration}</CourseDuration>}
+    <Card onPress={handleOpenCourse}>
+      <CourseThumbnail source={{ uri: course.thumbnail }} />
+      <CourseTitle>{course.title}</CourseTitle>
+      <CourseDuration>{course.totalDuration}</CourseDuration>
+      <LessonsCount>{course.lessons.length} aulas</LessonsCount>
 
-        {isPurchased ? (
+      {isPurchased ? (
+        <Button variant="secondary" size="lg" style={{ width: "100%" }}>
+          Ver Aulas
+        </Button>
+      ) : (
+        <>
+          <PriceTag>R$ {course.price.toFixed(2)}</PriceTag>
           <Button
-            variant="secondary"
+            variant="primary"
             size="lg"
-            onPress={handleWatch}
+            onPress={handlePurchase}
             style={{ width: "100%" }}
           >
-            ▶ Assistir Agora
+            Comprar Curso
           </Button>
-        ) : (
-          <>
-            <PriceTag>R$ {course.price.toFixed(2)}</PriceTag>
-            <Button
-              variant="primary"
-              size="lg"
-              onPress={handlePurchase}
-              style={{ width: "100%" }}
-            >
-              Comprar Curso
-            </Button>
-          </>
-        )}
-      </Card>
-
-      {showVideo && (
-        <VideoPlayer course={course} visible={showVideo} onClose={closeVideo} />
+        </>
       )}
-    </>
+    </Card>
   );
 };
