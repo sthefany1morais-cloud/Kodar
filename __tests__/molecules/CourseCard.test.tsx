@@ -7,14 +7,14 @@ const mockCourse: Course = {
   id: "1",
   title: "Test Course",
   thumbnail: "https://example.com/thumb.jpg",
-  playlistId: "playlist123", // ← ADICIONADO (obrigatório)
+  playlistId: "playlist123",
   totalDuration: "10h",
   lessons: [
     {
       id: "l1",
       title: "Lesson 1",
-      youtubeVideoId: "video123", // ← ADICIONADO (obrigatório)
-      order: 1, // ← ADICIONADO (obrigatório)
+      youtubeVideoId: "video123",
+      order: 1,
     },
   ],
   price: 99.99,

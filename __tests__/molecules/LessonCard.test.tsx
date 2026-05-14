@@ -6,9 +6,9 @@ import { Lesson } from "@/types";
 const mockLesson: Lesson = {
   id: "1",
   title: "Test Lesson",
-  youtubeVideoId: "abc123", // ← ADICIONADO (obrigatório)
+  youtubeVideoId: "abc123",
   duration: "10:30",
-  order: 1, // ← ADICIONADO (obrigatório)
+  order: 1,
 };
 
 const defaultProps = {

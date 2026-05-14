@@ -1,4 +1,3 @@
-// VideoPlayer.test.tsx
 import React from "react";
 import { render } from "@testing-library/react-native";
 import { VideoPlayer } from "@/components/organisms/VideoPlayer";
