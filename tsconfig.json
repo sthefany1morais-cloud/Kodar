@@ -11,7 +11,8 @@
       "@/types": ["./types/index.ts"]
     },
     "typeRoots": ["./node_modules/@types", "./src"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["jest", "node"] // ← ADICIONE ESTA LINHA
   },
   "include": [
     "**/*.ts",
