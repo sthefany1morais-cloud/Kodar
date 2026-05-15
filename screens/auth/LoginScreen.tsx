@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ScrollView, View, Alert } from "react-native";
+import { ScrollView, View, Alert, Platform } from "react-native";
 import { router } from "expo-router";
 import styled from "styled-components/native";
 import { Button } from "../../components/atoms/Button";
@@ -7,6 +7,7 @@ import { Input } from "../../components/atoms/Input";
 import { Loading } from "../../components/atoms/Loading";
 import { useAuth } from "../../context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 const Container = styled(SafeAreaView)`
   flex: 1;
@@ -48,13 +49,23 @@ const LoadingContainer = styled(View)`
   align-items: center;
 `;
 
+const BiometryButton = styled(Button)`
+  flex-direction: row;
+  gap: 12px;
+  background-color: ${({ disabled }) => (disabled ? "#9CA3AF" : "#10B981")};
+`;
+
+const BiometryIcon = styled(Icon)`
+  font-size: 24px;
+`;
+
 export function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { user, login } = useAuth();
+  const { user, login, biometricLogin, biometryAvailable } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -86,6 +97,26 @@ export function LoginScreen() {
     }
   };
 
+  const handleBiometricLogin = async () => {
+    if (!biometryAvailable) {
+      Alert.alert("Biometria", "Biometria não disponível neste dispositivo");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      await biometricLogin();
+    } catch (err: any) {
+      console.error("Biometric login error:", err);
+      setError(err.message || "Erro no login biométrico");
+      Alert.alert("Erro", err.message || "Erro no login biométrico");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <LoadingContainer>
@@ -101,6 +132,20 @@ export function LoginScreen() {
           <Logo>Kodar</Logo>
           <Subtitle>Faça login na sua conta</Subtitle>
         </LogoContainer>
+
+        {/* Botão de Biometria */}
+        {biometryAvailable && Platform.OS !== "web" && (
+          <BiometryButton
+            variant="primary"
+            size="lg"
+            onPress={handleBiometricLogin}
+            disabled={loading}
+            style={{ marginBottom: 24 }}
+          >
+            <BiometryIcon name="fingerprint" color="#FFFFFF" />
+            Entrar com biometria
+          </BiometryButton>
+        )}
 
         <Input
           label="E-mail"
